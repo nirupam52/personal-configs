@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres
+    restart: always
+    shm_size: 128mb
+    container_name: postgres_db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: yourPass
+      POSTGRES_USER: yourusername
+    volumes:
+       - postgres_data:/var/lib/postgresql
+  
+  kafka:
+    image: apache/kafka:latest
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,EXTERNAL://0.0.0.0:9093,CONTROLLER://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9094
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9093:9093"
+  dozzle:
+    container_name: dozzle
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - dozzle_data:/data
+    ports:
+      - 4500:8080
+  redis:
+      image: redis:latest
+      container_name: my-redis
+      ports:
+          - '6379:6379'
+      volumes:
+          - redis-data:/data
+      environment:
+          - REDIS_ARGS=--requirepass your_password_here --appendonly yes
+      restart: unless-stopped
+volumes:
+  postgres_data:
+  dozzle_data:
+  redis-data:
+    driver: local 
