@@ -1,0 +1,2 @@
+# Local development credentials. Copy services/.env.example to services/.env.
+services/.env

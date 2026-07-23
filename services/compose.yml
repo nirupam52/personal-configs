@@ -5,10 +5,11 @@ services:
     shm_size: 128mb
     container_name: postgres_db
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     environment:
-      POSTGRES_PASSWORD: yourPass
-      POSTGRES_USER: yourusername
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in services/.env}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
     volumes:
        - postgres_data:/var/lib/postgresql
   
@@ -25,7 +26,7 @@ services:
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9094
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     ports:
-      - "9093:9093"
+      - "127.0.0.1:9093:9093"
   dozzle:
     container_name: dozzle
     image: amir20/dozzle:latest
@@ -33,16 +34,15 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - dozzle_data:/data
     ports:
-      - 4500:8080
+      - "127.0.0.1:4500:8080"
   redis:
       image: redis:latest
       container_name: my-redis
       ports:
-          - '6379:6379'
+          - "127.0.0.1:6379:6379"
       volumes:
           - redis-data:/data
-      environment:
-          - REDIS_ARGS=--requirepass your_password_here --appendonly yes
+      command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?Set REDIS_PASSWORD in services/.env}", "--appendonly", "yes"]
       restart: unless-stopped
 volumes:
   postgres_data:
