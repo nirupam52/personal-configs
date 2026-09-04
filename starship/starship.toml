@@ -1,0 +1,70 @@
+"$schema" = "https://starship.rs/config-schema.json"
+
+format = """
+$directory\
+$git_branch\
+$git_status\
+$docker_context\
+$nodejs\
+$bun\
+$java\
+$golang\
+$python\
+$line_break\
+$character"""
+
+add_newline = false
+
+[directory]
+style = "bold cyan"
+format = "[$path]($style) "
+truncation_length = 3
+truncate_to_repo = true
+
+[git_branch]
+symbol = " "
+style = "bold purple"
+format = "[$symbol$branch]($style) "
+
+[git_status]
+style = "bold red"
+format = "[$all_status$ahead_behind]($style) "
+
+[docker_context]
+symbol = " "
+style = "blue"
+format = "[$symbol$context]($style) "
+only_with_files = true
+
+[nodejs]
+symbol = " "
+style = "green"
+format = "[$symbol$version]($style) "
+detect_files = ["package.json", ".node-version"]
+detect_folders = ["node_modules"]
+
+[bun]
+symbol = " "
+style = "bold white"
+format = "[$symbol$version]($style) "
+
+[java]
+symbol = " "
+style = "red"
+format = "[$symbol$version]($style) "
+
+[golang]
+symbol = " "
+style = "cyan"
+format = "[$symbol$version]($style) "
+
+[python]
+symbol = " "
+style = "yellow"
+format = "[$symbol$version]($style) "
+python_binary = ["python3", "python"]
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+vimcmd_symbol = "[❮](bold green)"

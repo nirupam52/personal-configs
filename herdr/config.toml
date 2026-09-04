@@ -1,0 +1,23 @@
+onboarding = false
+[theme]
+name = "tokyo-night"
+auto_switch = false
+
+[keys]
+split_horizontal = "prefix+minus"
+split_vertical = "prefix+plus"
+previous_workspace="prefix+<"
+next_workspace="prefix+>"
+focus_pane_left = "prefix+left"
+focus_pane_right = "prefix+right"
+focus_pane_up = "prefix+up"
+focus_pane_down = "prefix+down"
+
+[ui]
+agent_panel_sort = "spaces"
+
+[terminal]
+# windows stuff
+# default_shell = "C:\\Program Files\\Git\\bin\\bash.exe"
+# shell_mode = "auto"
+# new_cwd = "C:\\Users\\Nirupam\\Desktop\\projects"
