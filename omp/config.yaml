@@ -1,0 +1,25 @@
+modelRoles:
+  default: anthropic/claude-sonnet-5:high
+  smol: openai-codex/gpt-5.6-luna:medium
+  slow: openai-codex/gpt-5.6-sol:high
+  plan: anthropic/claude-opus-5:high
+  task: openai-codex/gpt-5.6-luna:high
+  commit: openai-codex/gpt-5.6-luna:medium
+  vision: openai-codex/gpt-5.6-terra:medium
+  advisor: anthropic/claude-sonnet-5:high
+  designer: anthropic/claude-sonnet-5:medium
+  tiny: openai-codex/gpt-5.6-luna:medium
+symbolPreset: nerd
+composer:
+  shape: field
+theme:
+  dark: dark-catppuccin
+setupVersion: 2
+statusLine:
+  contextLine: "off"
+  preset: compact
+dev:
+  autoqaConsent: denied
+browser:
+  enabled: false
+hideThinkingBlock: false
