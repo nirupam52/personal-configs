@@ -1,14 +1,15 @@
 modelRoles:
-  default: anthropic/claude-sonnet-5.5:high
-  smol: openai-codex/gpt-6-luna:medium
-  slow: openai-codex/gpt-6.1-sol:high
-  plan: anthropic/claude-opus-5.5:high
-  task: openai-codex/gpt-6-luna:high
-  commit: openai-codex/gpt-6-luna:medium
-  vision: openai-codex/gpt-5.6-terra:medium
-  advisor: anthropic/claude-sonnet-5.5:high
-  designer: anthropic/claude-sonnet-5.5:medium
-  tiny: openai-codex/gpt-6-luna:medium
+  default: anthropic/claude-sonnet-5-5:high
+  smol: anthropic/claude-sonnet-5-5:low
+  slow: anthropic/claude-opus-5-5:xhigh
+  plan: anthropic/claude-opus-5-5:high
+  task: openai-codex/gpt-6.1-sol:medium
+  commit: openai-codex/gpt-6.1-sol:low
+  vision: openai-codex/gpt-6.1-sol:high
+  advisor: anthropic/claude-opus-5-5:medium
+  designer: anthropic/claude-opus-5-5:medium
+  tiny: openai-codex/gpt-6-luna:high
+  fast_worker: openai-codex/gpt-6.1-sol:low
 symbolPreset: nerd
 composer:
   shape: field
@@ -23,3 +24,9 @@ dev:
 browser:
   enabled: false
 hideThinkingBlock: false
+task:
+  agentModelOverrides:
+    scout: "@fast_worker"
+    sonic: "@fast_worker"
+    reviewer: "@plan"
+    security-reviewer: "@plan"
