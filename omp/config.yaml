@@ -28,5 +28,5 @@ task:
   agentModelOverrides:
     scout: "@fast_worker"
     sonic: "@fast_worker"
-    reviewer: "@plan"
-    security-reviewer: "@plan"
+    reviewer: openai-codex/gpt-6.1-sol:high
+    security-reviewer: openai-codex/gpt-6.1-sol:high
