@@ -1,0 +1,138 @@
+# Apple Silicon / Lima 2.3+. Create a new instance; source edits do not update it.
+# Run agents as `agent`, never as the sudo-capable Lima management user.
+minimumLimaVersion: "2.3.0"
+base:
+  - template:ubuntu-24.04
+vmType: vz
+arch: aarch64
+cpus: 4
+memory: "4GiB"
+disk: "40GiB"
+
+# No host mounts, guest agent, dynamic port forwarding, containerd, or Rosetta.
+plain: true
+networks: []
+nestedVirtualization: false
+ssh:
+  loadDotSSHPubKeys: false
+  forwardX11: false
+networkOpts:
+  hostLoopback: false
+propagateProxyEnv: false
+# Public DNS only; do not inherit host VPN/LAN resolvers.
+hostResolver:
+  enabled: false
+dns:
+  - 1.1.1.1
+  - 9.9.9.9
+upgradePackages: false
+
+provision:
+  - mode: system
+    script: |
+      #!/bin/bash
+      set -euo pipefail
+      test '{{.User}}' != agent
+      export DEBIAN_FRONTEND=noninteractive
+
+      # Install system tools once, before creating the unprivileged account.
+      marker=/var/lib/omp-sandbox/packages-v1
+      if ! test -f "$marker"; then
+        apt-get update
+        apt-get install -y --no-install-recommends \
+          nftables sudo ca-certificates curl git openssh-client \
+          build-essential python3 python3-venv ripgrep jq unzip tmux less \
+          unattended-upgrades
+        install -d -m 0755 /var/lib/omp-sandbox
+        touch "$marker"
+      fi
+
+      # Root-owned, default-deny policy. Never add another firewall manager here.
+      cat > /etc/nftables.conf <<'NFT'
+      flush ruleset
+      table inet sandbox {
+        set non_public_v4 {
+          type ipv4_addr
+          flags interval
+          elements = {
+            0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8,
+            169.254.0.0/16, 172.16.0.0/12, 192.0.0.0/24,
+            192.0.2.0/24, 192.88.99.0/24, 192.168.0.0/16,
+            198.18.0.0/15, 198.51.100.0/24, 203.0.113.0/24,
+            224.0.0.0/4, 240.0.0.0/4
+          }
+        }
+        chain input {
+          type filter hook input priority 0; policy drop;
+          iifname "lo" accept
+          ct state invalid drop
+          ct state established,related accept
+          # Lima management SSH; authentication requires the Mac's Lima key.
+          tcp dport 22 accept
+          # DHCP responses from Lima's virtual gateway, not arbitrary LAN peers.
+          ip saddr 192.168.5.2 udp sport 67 udp dport 68 accept
+        }
+        chain forward {
+          type filter hook forward priority 0; policy drop;
+        }
+        chain output {
+          type filter hook output priority 0; policy drop;
+          oifname "lo" accept
+          ct state invalid drop
+          ct state established,related accept
+          # Minimal virtual-network infrastructure, before the private-IP deny.
+          ip daddr { 192.168.5.2, 255.255.255.255 } udp sport 68 udp dport 67 accept
+          ip daddr { 192.168.5.3, 1.1.1.1, 9.9.9.9 } udp dport 53 accept
+          ip daddr { 192.168.5.3, 1.1.1.1, 9.9.9.9 } tcp dport 53 accept
+          ip daddr @non_public_v4 counter reject with icmpx type admin-prohibited
+          meta nfproto ipv6 counter reject with icmpx type admin-prohibited
+          ip protocol tcp tcp dport { 80, 443 } accept
+          ip protocol udp udp dport 123 accept
+          counter reject with icmpx type admin-prohibited
+        }
+      }
+      NFT
+      chmod 0644 /etc/nftables.conf
+      nft --file /etc/nftables.conf
+      systemctl enable nftables.service
+
+      # Subsequent boots must load the firewall before configuring networking.
+      install -d -m 0755 /etc/systemd/system/systemd-networkd.service.d
+      cat > /etc/systemd/system/systemd-networkd.service.d/10-sandbox.conf <<'UNIT'
+      [Unit]
+      Requires=nftables.service
+      After=nftables.service
+      UNIT
+      systemctl daemon-reload
+
+      cat > /etc/apt/apt.conf.d/99-sandbox-updates <<'APT'
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+      Unattended-Upgrade::Automatic-Reboot "false";
+      APT
+      systemctl enable apt-daily.timer apt-daily-upgrade.timer
+
+      # Keep management private; agents get no password login or sudo privileges.
+      chmod 0700 '{{.Home}}'
+      if ! id agent >/dev/null 2>&1; then
+        useradd --create-home --user-group --shell /bin/bash agent
+      fi
+      usermod --lock --groups '' agent
+      chmod 0700 /home/agent
+      # Drop privileges BEFORE traversing paths the agent can replace with symlinks.
+      runuser -u agent -- mkdir -p -m 0700 \
+        /home/agent/work /home/agent/.omp /home/agent/.local /home/agent/.local/bin
+      printf 'agent ALL=(ALL:ALL) !ALL\n' > /etc/sudoers.d/99-agent
+      chmod 0440 /etc/sudoers.d/99-agent
+      visudo --check --file /etc/sudoers.d/99-agent
+      cat > /etc/profile.d/agent-defaults.sh <<'PROFILE'
+      if [ "$(id -un)" = agent ]; then
+        umask 077
+        export PATH="$HOME/.local/bin:$PATH"
+      fi
+      PROFILE
+
+message: |
+  Agent shell:
+    limactl shell --preserve-env=false --workdir=/tmp {{.Name}} sudo -iu agent
+  Install omp there; keep projects in ~/work. See README for management commands.
